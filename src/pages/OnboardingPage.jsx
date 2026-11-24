@@ -1,235 +1,592 @@
+
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Button from '../components/common/Button';
-import { ShieldCheck, Target, Bell, ArrowRight, CheckCircle2, Zap, Smile, Compass } from 'lucide-react';
+import {
+  ShieldCheck,
+  Target,
+  Bell,
+  ArrowRight,
+  ArrowLeft,
+  CheckCircle2,
+  Zap,
+  Smile,
+  Compass,
+  BookOpen,
+  Heart,
+  BriefcaseBusiness,
+  Users,
+  Moon,
+  Lightbulb,
+  Coffee,
+  Sparkles
+} from 'lucide-react';
+
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
-  
-  // 1. Treatment Mode Choice
-  const [treatmentMode, setTreatmentMode] = useState('command'); // Default: 'command' | 'positive' | 'calm'
-  
-  // 2. Life Areas Choice
-  const [selectedAreas, setSelectedAreas] = useState(['Health and exercise', 'Work and business']);
-  
-  // 3. Reminders Choice
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const [treatmentMode, setTreatmentMode] = useState('command');
+
+  const [selectedAreas, setSelectedAreas] = useState([
+    'Health and exercise',
+    'Work and business'
+  ]);
+
   const [startOfDay, setStartOfDay] = useState('08:00');
   const [reminderPref, setReminderPref] = useState('both');
-  
+
   const navigate = useNavigate();
 
   const treatmentOptions = [
     {
       id: 'command',
-      title: 'Strict & Direct (Command)',
+      title: 'Strict & Direct',
+      subtitle: 'Clear accountability',
       icon: Zap,
-      description: 'Clear, direct, no-nonsense accountability. Keeps you sharp and focused on execution without fluff.'
+      description:
+        'Direct, honest guidance that keeps you focused on your commitments and taking action.'
     },
     {
       id: 'positive',
-      title: 'Encouraging & Upbeat (Happy)',
+      title: 'Encouraging & Upbeat',
+      subtitle: 'Positive motivation',
       icon: Smile,
-      description: 'Warm, highly supportive tone. Celebrates every win and offers positive reinforcement for daily progress.'
+      description:
+        'Warm encouragement that celebrates progress and helps you stay motivated.'
     },
     {
       id: 'calm',
       title: 'Calm & Mindful',
+      subtitle: 'Balanced guidance',
       icon: Compass,
-      description: 'Quiet, balanced guidance. Focuses on steady consistency, clarity, and reflection.'
+      description:
+        'Quiet, thoughtful guidance focused on steady progress, clarity, and reflection.'
     }
   ];
 
   const lifeAreas = [
-    'Learning and education',
-    'Health and exercise',
-    'Work and business',
-    'Family and relationships',
-    'Prayer and spiritual life',
-    'Personal projects',
-    'Rest and free time'
+    {
+      id: 'Learning and education',
+      icon: BookOpen,
+      description: 'Study, reading and new skills'
+    },
+    {
+      id: 'Health and exercise',
+      icon: Heart,
+      description: 'Movement, exercise and wellbeing'
+    },
+    {
+      id: 'Work and business',
+      icon: BriefcaseBusiness,
+      description: 'Career, work and business goals'
+    },
+    {
+      id: 'Family and relationships',
+      icon: Users,
+      description: 'Family, friends and relationships'
+    },
+    {
+      id: 'Prayer and spiritual life',
+      icon: Moon,
+      description: 'Spiritual growth and reflection'
+    },
+    {
+      id: 'Personal projects',
+      icon: Lightbulb,
+      description: 'Creative ideas and personal goals'
+    },
+    {
+      id: 'Rest and free time',
+      icon: Coffee,
+      description: 'Rest, hobbies and personal time'
+    }
   ];
 
   const toggleArea = (area) => {
-    if (selectedAreas.includes(area)) {
-      setSelectedAreas(selectedAreas.filter(a => a !== area));
-    } else {
-      setSelectedAreas([...selectedAreas, area]);
+    setError('');
+
+    setSelectedAreas((previous) =>
+      previous.includes(area)
+        ? previous.filter((item) => item !== area)
+        : [...previous, area]
+    );
+  };
+
+  const goToNextStep = () => {
+    setError('');
+
+    if (step === 2 && selectedAreas.length === 0) {
+      setError('Please select at least one life area to continue.');
+      return;
+    }
+
+    setStep((previous) => Math.min(previous + 1, 3));
+  };
+
+  const goToPreviousStep = () => {
+    setError('');
+    setStep((previous) => Math.max(previous - 1, 1));
+  };
+
+  const handleFinish = () => {
+    if (saving) return;
+
+    setError('');
+
+    if (selectedAreas.length === 0) {
+      setStep(2);
+      setError('Please select at least one life area.');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const preferences = {
+        treatmentMode,
+        selectedAreas,
+        startOfDay,
+        reminderPref,
+        onboardingCompleted: true,
+        updatedAt: new Date().toISOString()
+      };
+
+      localStorage.setItem(
+        'habitra_treatment_mode',
+        treatmentMode
+      );
+
+      localStorage.setItem(
+        'habitra_onboarding_preferences',
+        JSON.stringify(preferences)
+      );
+
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Unable to save your preferences. Please try again.');
+      setSaving(false);
     }
   };
 
-  const handleFinish = async () => {
-    // Save chosen treatmentMode and preferences to user account / backend here if needed
-    localStorage.setItem('habitra_treatment_mode', treatmentMode);
-    
-    // Proceed directly to dashboard
-    navigate('/dashboard');
-  };
-
   return (
-    <div className="container" style={{ maxWidth: '640px', marginTop: '3rem', marginBottom: '4rem' }}>
-      
-      {/* Header Progress */}
-      <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-        <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem', letterSpacing: '-0.03em' }}>Welcome to HABITRA</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Personalize your experience • Step {step} of 3</p>
-      </div>
+    <main className="onboarding-page">
 
-      <div className="card" style={{ padding: '2.5rem' }}>
-        
-        {/* STEP 1: How should HABITRA treat you? */}
-        {step === 1 && (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <ShieldCheck size={22} style={{ color: 'var(--accent)' }} />
-              </div>
-              <h3 style={{ fontSize: '1.25rem' }}>How Should HABITRA Treat You?</h3>
-            </div>
-            
-            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-              Select the interaction style that best keeps you accountable. HABITRA will tailor its notifications, check-ins, and messages to match:
-            </p>
+      <div className="onboarding-decoration onboarding-decoration-one" />
+      <div className="onboarding-decoration onboarding-decoration-two" />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem' }}>
-              {treatmentOptions.map((opt) => {
-                const Icon = opt.icon;
-                const isSelected = treatmentMode === opt.id;
-                return (
-                  <div
-                    key={opt.id}
-                    onClick={() => setTreatmentMode(opt.id)}
-                    style={{
-                      padding: '1.25rem',
-                      borderRadius: 'var(--radius)',
-                      border: `2px solid ${isSelected ? 'var(--accent)' : 'var(--border-color)'}`,
-                      backgroundColor: isSelected ? 'var(--bg-secondary)' : '#ffffff',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      display: 'flex',
-                      gap: '1rem',
-                      alignItems: 'flex-start'
-                    }}
-                  >
-                    <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: isSelected ? 'var(--accent)' : 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Icon size={18} style={{ color: isSelected ? '#171717' : 'var(--text-primary)' }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                        <strong style={{ fontSize: '1rem' }}>{opt.title}</strong>
-                        {isSelected && <CheckCircle2 size={18} style={{ color: 'var(--accent)' }} />}
-                      </div>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.5 }}>
-                        {opt.description}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+      <div className="onboarding-container">
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button onClick={() => setStep(2)} style={{ background: 'var(--accent)', color: '#171717' }}>
-                Next: Select Life Areas <ArrowRight size={16} />
-              </Button>
-            </div>
+        {/* BRAND */}
+        <header className="onboarding-header">
+          <a href="/" className="onboarding-brand">
+            <span className="onboarding-brand-icon">
+              <Target size={23} />
+            </span>
+            <span>HABITRA</span>
+          </a>
+
+          <span className="onboarding-header-label">
+            YOUR PERSONAL SPACE
+          </span>
+        </header>
+
+        {/* INTRO */}
+        <section className="onboarding-intro">
+          <div className="onboarding-welcome-tag">
+            <Sparkles size={15} />
+            <span>LET'S MAKE IT PERSONAL</span>
           </div>
-        )}
 
-        {/* STEP 2: Core Life Areas */}
-        {step === 2 && (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Target size={22} style={{ color: 'var(--accent)' }} />
-              </div>
-              <h3 style={{ fontSize: '1.25rem' }}>Select Core Life Areas</h3>
-            </div>
-            
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-              Choose the areas of life you want to focus on:
-            </p>
+          <h1>
+            Welcome to
+            <span> HABITRA.</span>
+          </h1>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '2.5rem' }}>
-              {lifeAreas.map((area) => {
-                const isSelected = selectedAreas.includes(area);
-                return (
-                  <div
-                    key={area}
-                    onClick={() => toggleArea(area)}
-                    style={{
-                      padding: '0.85rem 1rem',
-                      borderRadius: 'var(--radius)',
-                      border: `1px solid ${isSelected ? 'var(--accent)' : 'var(--border-color)'}`,
-                      backgroundColor: isSelected ? 'var(--bg-secondary)' : '#ffffff',
-                      cursor: 'pointer',
-                      fontWeight: isSelected ? 600 : 400,
-                      fontSize: '0.9rem',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <span>{area}</span>
-                    {isSelected && <CheckCircle2 size={16} style={{ color: 'var(--accent)' }} />}
-                  </div>
-                );
-              })}
-            </div>
+          <p>
+            A few thoughtful choices will help us create an
+            experience that works with your routine and goals.
+          </p>
+        </section>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Button variant="secondary" onClick={() => setStep(1)}>Back</Button>
-              <Button onClick={() => setStep(3)} style={{ background: 'var(--accent)', color: '#171717' }}>
-                Next: Schedule <ArrowRight size={16} />
-              </Button>
-            </div>
+        {/* PROGRESS */}
+        <section className="onboarding-progress">
+
+          <div className="onboarding-progress-top">
+            <span>YOUR SETUP</span>
+            <strong>STEP {step} OF 3</strong>
           </div>
-        )}
 
-        {/* STEP 3: Reminders & Finish */}
-        {step === 3 && (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Bell size={22} style={{ color: 'var(--accent)' }} />
+          <div
+            className="onboarding-progress-track"
+            role="progressbar"
+            aria-valuenow={step}
+            aria-valuemin={1}
+            aria-valuemax={3}
+          >
+            <div
+              className="onboarding-progress-fill"
+              style={{ width: `${(step / 3) * 100}%` }}
+            />
+          </div>
+
+          <div className="onboarding-step-labels">
+            <span className={step >= 1 ? 'active' : ''}>
+              Your style
+            </span>
+            <span className={step >= 2 ? 'active' : ''}>
+              Life areas
+            </span>
+            <span className={step >= 3 ? 'active' : ''}>
+              Schedule
+            </span>
+          </div>
+
+        </section>
+
+        {/* MAIN CARD */}
+        <section className="onboarding-card">
+
+          {/* STEP 1 */}
+          {step === 1 && (
+            <div className="onboarding-step-content">
+
+              <div className="onboarding-step-heading">
+                <div className="onboarding-step-icon">
+                  <ShieldCheck size={23} />
+                </div>
+
+                <div>
+                  <span className="onboarding-section-label">
+                    STEP 01
+                  </span>
+                  <h2>How should HABITRA guide you?</h2>
+                </div>
               </div>
-              <h3 style={{ fontSize: '1.25rem' }}>Reminders & Schedule</h3>
-            </div>
 
-            <div className="form-group">
-              <label>Preferred Start-of-Day Time</label>
-              <input
-                type="time"
-                value={startOfDay}
-                onChange={(e) => setStartOfDay(e.target.value)}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border-color)' }}
-              />
-            </div>
+              <p className="onboarding-description">
+                Everyone responds differently to accountability.
+                Choose the communication style that feels right for you.
+              </p>
 
-            <div className="form-group" style={{ marginBottom: '2.5rem' }}>
-              <label>Notification Channels</label>
-              <select
-                value={reminderPref}
-                onChange={(e) => setReminderPref(e.target.value)}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border-color)', background: '#ffffff' }}
+              <div className="treatment-options">
+
+                {treatmentOptions.map((option) => {
+                  const Icon = option.icon;
+                  const isSelected = treatmentMode === option.id;
+
+                  return (
+                    <button
+                      type="button"
+                      key={option.id}
+                      className={`treatment-option ${
+                        isSelected ? 'selected' : ''
+                      }`}
+                      onClick={() => setTreatmentMode(option.id)}
+                      aria-pressed={isSelected}
+                    >
+                      <span className="treatment-option-icon">
+                        <Icon size={21} />
+                      </span>
+
+                      <span className="treatment-option-content">
+                        <span className="treatment-option-title">
+                          {option.title}
+                        </span>
+
+                        <span className="treatment-option-subtitle">
+                          {option.subtitle}
+                        </span>
+
+                        <span className="treatment-option-description">
+                          {option.description}
+                        </span>
+                      </span>
+
+                      <span className="treatment-option-check">
+                        {isSelected && <CheckCircle2 size={21} />}
+                      </span>
+                    </button>
+                  );
+                })}
+
+              </div>
+
+              <div className="onboarding-note">
+                <Sparkles size={17} />
+                <span>
+                  You can change your communication style later in Settings.
+                </span>
+              </div>
+
+            </div>
+          )}
+
+          {/* STEP 2 */}
+          {step === 2 && (
+            <div className="onboarding-step-content">
+
+              <div className="onboarding-step-heading">
+                <div className="onboarding-step-icon">
+                  <Target size={23} />
+                </div>
+
+                <div>
+                  <span className="onboarding-section-label">
+                    STEP 02
+                  </span>
+                  <h2>What matters in your life?</h2>
+                </div>
+              </div>
+
+              <p className="onboarding-description">
+                Select the areas where you want to make progress.
+                You can choose more than one.
+              </p>
+
+              <div className="life-area-summary">
+                <span>Your selected areas</span>
+                <strong>{selectedAreas.length} selected</strong>
+              </div>
+
+              <div className="life-area-grid">
+
+                {lifeAreas.map((area) => {
+                  const Icon = area.icon;
+                  const isSelected = selectedAreas.includes(area.id);
+
+                  return (
+                    <button
+                      type="button"
+                      key={area.id}
+                      className={`life-area-option ${
+                        isSelected ? 'selected' : ''
+                      }`}
+                      onClick={() => toggleArea(area.id)}
+                      aria-pressed={isSelected}
+                    >
+                      <span className="life-area-icon">
+                        <Icon size={20} />
+                      </span>
+
+                      <span className="life-area-content">
+                        <strong>{area.id}</strong>
+                        <small>{area.description}</small>
+                      </span>
+
+                      <span className="life-area-check">
+                        {isSelected && <CheckCircle2 size={19} />}
+                      </span>
+                    </button>
+                  );
+                })}
+
+              </div>
+
+              <div className="onboarding-note">
+                <Target size={17} />
+                <span>
+                  Start with the areas that matter most. You can adjust
+                  your goals as your priorities change.
+                </span>
+              </div>
+
+            </div>
+          )}
+
+          {/* STEP 3 */}
+          {step === 3 && (
+            <div className="onboarding-step-content">
+
+              <div className="onboarding-step-heading">
+                <div className="onboarding-step-icon">
+                  <Bell size={23} />
+                </div>
+
+                <div>
+                  <span className="onboarding-section-label">
+                    STEP 03
+                  </span>
+                  <h2>Set your daily rhythm.</h2>
+                </div>
+              </div>
+
+              <p className="onboarding-description">
+                Choose when your day begins and how you'd like
+                HABITRA to remind you about your commitments.
+              </p>
+
+              <div className="schedule-field">
+
+                <label htmlFor="onboarding-start-time">
+                  Preferred start-of-day time
+                </label>
+
+                <div className="schedule-input-wrapper">
+                  <span className="schedule-input-icon">
+                    <Target size={19} />
+                  </span>
+
+                  <input
+                    id="onboarding-start-time"
+                    type="time"
+                    value={startOfDay}
+                    onChange={(e) => setStartOfDay(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <small>
+                  Your daily schedule will use this preferred start time.
+                </small>
+
+              </div>
+
+              <div className="schedule-field">
+
+                <label htmlFor="onboarding-reminders">
+                  Notification preferences
+                </label>
+
+                <div className="schedule-input-wrapper">
+                  <span className="schedule-input-icon">
+                    <Bell size={19} />
+                  </span>
+
+                  <select
+                    id="onboarding-reminders"
+                    value={reminderPref}
+                    onChange={(e) => setReminderPref(e.target.value)}
+                  >
+                    <option value="both">
+                      Email and Web Push
+                    </option>
+                    <option value="email">
+                      Email only
+                    </option>
+                    <option value="push">
+                      Web Push only
+                    </option>
+                    <option value="none">
+                      No automated reminders
+                    </option>
+                  </select>
+                </div>
+
+                <small>
+                  You can update your notification preferences later.
+                </small>
+
+              </div>
+
+              {/* SUMMARY */}
+              <div className="onboarding-summary">
+
+                <div className="onboarding-summary-heading">
+                  <CheckCircle2 size={19} />
+                  <strong>Your setup summary</strong>
+                </div>
+
+                <div className="onboarding-summary-row">
+                  <span>Communication style</span>
+                  <strong>
+                    {treatmentOptions.find(
+                      (option) => option.id === treatmentMode
+                    )?.title}
+                  </strong>
+                </div>
+
+                <div className="onboarding-summary-row">
+                  <span>Life areas</span>
+                  <strong>{selectedAreas.length} selected</strong>
+                </div>
+
+                <div className="onboarding-summary-row">
+                  <span>Start of day</span>
+                  <strong>{startOfDay}</strong>
+                </div>
+
+                <div className="onboarding-summary-row">
+                  <span>Reminders</span>
+                  <strong>
+                    {{
+                      both: 'Email + Push',
+                      email: 'Email',
+                      push: 'Web Push',
+                      none: 'Disabled'
+                    }[reminderPref]}
+                  </strong>
+                </div>
+
+              </div>
+
+            </div>
+          )}
+
+          {/* ERROR */}
+          {error && (
+            <div className="onboarding-error" role="alert">
+              {error}
+            </div>
+          )}
+
+          {/* NAVIGATION */}
+          <div className="onboarding-navigation">
+
+            {step > 1 ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={goToPreviousStep}
+                disabled={saving}
               >
-                <option value="both">Both Email & Web Push Notifications</option>
-                <option value="email">Email Reminders Only</option>
-                <option value="push">Web Push Notifications Only</option>
-                <option value="none">No Automated Reminders</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Button variant="secondary" onClick={() => setStep(2)}>Back</Button>
-              <Button onClick={handleFinish} style={{ background: 'var(--accent)', color: '#171717' }}>
-                Complete Setup & Go to Dashboard <CheckCircle2 size={16} />
+                <ArrowLeft size={17} />
+                Back
               </Button>
-            </div>
+            ) : (
+              <span />
+            )}
+
+            {step < 3 ? (
+              <Button
+                type="button"
+                onClick={goToNextStep}
+              >
+                Continue
+                <ArrowRight size={17} />
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={handleFinish}
+                disabled={saving}
+              >
+                {saving ? (
+                  'Saving preferences...'
+                ) : (
+                  <>
+                    Complete setup
+                    <CheckCircle2 size={17} />
+                  </>
+                )}
+              </Button>
+            )}
+
           </div>
-        )}
+
+        </section>
+
+        {/* FOOTER */}
+        <footer className="onboarding-footer">
+          <ShieldCheck size={16} />
+          <span>
+            Your journey, your pace. You can update your preferences anytime.
+          </span>
+        </footer>
 
       </div>
-    </div>
+    </main>
   );
 }

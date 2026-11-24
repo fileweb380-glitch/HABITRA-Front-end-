@@ -26,11 +26,15 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-const register = async (name, email, password, timezone) => {
+  const register = async (name, email, password, timezone) => {
     const data = await authService.register(name, email, password, timezone);
     localStorage.setItem('habitra_token', data.token);
     setUser(data);
     return data;
+  };
+
+  const resendVerification = async () => {
+    return await authService.resendVerification();
   };
 
   const logout = () => {
@@ -39,7 +43,7 @@ const register = async (name, email, password, timezone) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, resendVerification, loading }}>
       {children}
     </AuthContext.Provider>
   );

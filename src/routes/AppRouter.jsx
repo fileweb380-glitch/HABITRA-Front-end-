@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useAuth } from '../features/auth/AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 import AppLayout from '../components/layout/AppLayout';
+import AlarmOverlay from '../components/AlarmOverlay';
 
 import LandingPage from '../pages/LandingPage';
 import LoginPage from '../pages/LoginPage';
@@ -10,6 +11,7 @@ import RegisterPage from '../pages/RegisterPage';
 import VerifyEmailPage from '../pages/VerifyEmailPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
+import CheckInResponsePage from '../pages/CheckInResponsePage'; // Added Check-In Email Response Page
 import OnboardingPage from '../pages/OnboardingPage';
 import DashboardPage from '../pages/DashboardPage';
 import GoalsPage from '../pages/GoalsPage';
@@ -20,6 +22,7 @@ import DailyReportPage from '../pages/DailyReportPage';
 import WeeklyReportPage from '../pages/WeeklyReportPage';
 import SettingsPage from '../pages/SettingsPage';
 import NotFoundPage from '../pages/NotFoundPage';
+import HabitDetailPage from '../pages/HabitDetailPage';
 
 export default function AppRouter() {
   const { user, loading } = useAuth();
@@ -30,6 +33,7 @@ export default function AppRouter() {
 
   return (
     <Router>
+      <AlarmOverlay />
       <Routes>
         {/* Public Landing Page */}
         <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" replace />} />
@@ -40,6 +44,7 @@ export default function AppRouter() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/checkin/response" element={<CheckInResponsePage />} /> {/* Email Action Response Route */}
 
         {/* Onboarding Route (Full Screen, Protected) */}
         <Route 
@@ -61,6 +66,7 @@ export default function AppRouter() {
           <Route path="/reports/daily" element={<DailyReportPage />} />
           <Route path="/reports/weekly" element={<WeeklyReportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path='/habits/:id' element={<HabitDetailPage/>}/>
         </Route>
 
         {/* Catch-all 404 */}
