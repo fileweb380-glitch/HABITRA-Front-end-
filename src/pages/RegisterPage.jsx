@@ -60,7 +60,10 @@ export default function RegisterPage() {
 
     try {
       await register(cleanName, cleanEmail, password, timezone);
-      navigate('/onboarding');
+
+      navigate(
+        `/verify-email?email=${encodeURIComponent(cleanEmail)}&pending=1`
+        );
     } catch (err) {
       const errorMessage =
         err.response?.data?.error ||

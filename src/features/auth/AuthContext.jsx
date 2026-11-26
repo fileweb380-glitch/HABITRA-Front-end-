@@ -1,52 +1,85 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authService } from './authService';
 
-const AuthContext = createContext(null);
+import React, {
+  createContext,
+    useContext,
+      useState,
+        useEffect
+        } from 'react';
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+        import { authService } from './authService';
 
-  useEffect(() => {
-    const token = localStorage.getItem('habitra_token');
-    if (token) {
-      authService.getMe()
-        .then(data => setUser(data))
-        .catch(() => localStorage.removeItem('habitra_token'))
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
-  }, []);
+        const AuthContext = createContext(null);
 
-  const login = async (email, password) => {
-    const data = await authService.login(email, password);
-    localStorage.setItem('habitra_token', data.token);
-    setUser(data);
-    return data;
-  };
+        export const AuthProvider = ({ children }) => {
+          const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
 
-  const register = async (name, email, password, timezone) => {
-    const data = await authService.register(name, email, password, timezone);
-    localStorage.setItem('habitra_token', data.token);
-    setUser(data);
-    return data;
-  };
+              useEffect(() => {
+                  const token = localStorage.getItem('habitra_token');
 
-  const resendVerification = async () => {
-    return await authService.resendVerification();
-  };
+                      if (token) {
+                            authService.getMe()
+                                    .then(data => {
+                                              if (!data.isVerified) {
+                                                          localStorage.removeItem('habitra_token');
+                                                                      setUser(null);
+                                                                                  return;
+                                                                                            }
 
-  const logout = () => {
-    localStorage.removeItem('habitra_token');
-    setUser(null);
-  };
+                                                                                                      setUser(data);
+                                                                                                              })
+                                                                                                                      .catch(() => {
+                                                                                                                                localStorage.removeItem('habitra_token');
+                                                                                                                                          setUser(null);
+                                                                                                                                                  })
+                                                                                                                                                          .finally(() => setLoading(false));
+                                                                                                                                                              } else {
+                                                                                                                                                                    setLoading(false);
+                                                                                                                                                                        }
+                                                                                                                                                                          }, []);
 
-  return (
-    <AuthContext.Provider value={{ user, login, register, logout, resendVerification, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+                                                                                                                                                                            const login = async (email, password) => {
+                                                                                                                                                                                const data = await authService.login(email, password);
 
-export const useAuth = () => useContext(AuthContext);
+                                                                                                                                                                                    localStorage.setItem('habitra_token', data.token);
+                                                                                                                                                                                        setUser(data);
+
+                                                                                                                                                                                            return data;
+                                                                                                                                                                                              };
+
+                                                                                                                                                                                                const register = async (name, email, password, timezone) => {
+                                                                                                                                                                                                    return await authService.register(
+                                                                                                                                                                                                          name,
+                                                                                                                                                                                                                email,
+                                                                                                                                                                                                                      password,
+                                                                                                                                                                                                                            timezone
+                                                                                                                                                                                                                                );
+                                                                                                                                                                                                                                  };
+
+                                                                                                                                                                                                                                    const resendVerification = async (email) => {
+                                                                                                                                                                                                                                        return await authService.resendVerification(email);
+                                                                                                                                                                                                                                          };
+
+                                                                                                                                                                                                                                            const logout = () => {
+                                                                                                                                                                                                                                                localStorage.removeItem('habitra_token');
+                                                                                                                                                                                                                                                    setUser(null);
+                                                                                                                                                                                                                                                      };
+
+                                                                                                                                                                                                                                                        return (
+                                                                                                                                                                                                                                                            <AuthContext.Provider
+                                                                                                                                                                                                                                                                  value={{
+                                                                                                                                                                                                                                                                          user,
+                                                                                                                                                                                                                                                                                  login,
+                                                                                                                                                                                                                                                                                          register,
+                                                                                                                                                                                                                                                                                                  logout,
+                                                                                                                                                                                                                                                                                                          resendVerification,
+                                                                                                                                                                                                                                                                                                                  loading
+                                                                                                                                                                                                                                                                                                                        }}
+                                                                                                                                                                                                                                                                                                                            >
+                                                                                                                                                                                                                                                                                                                                  {children}
+                                                                                                                                                                                                                                                                                                                                      </AuthContext.Provider>
+                                                                                                                                                                                                                                                                                                                                        );
+                                                                                                                                                                                                                                                                                                                                        };
+
+                                                                                                                                                                                                                                                                                                                                        export const useAuth = () => useContext(AuthContext);
+                                                                                                                                                                                                                                                                                                                                        
