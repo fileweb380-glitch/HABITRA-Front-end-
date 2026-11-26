@@ -123,38 +123,53 @@ export const authService = {
     return res.data;
   },
 
-  // RESEND FIREBASE VERIFICATION EMAIL
-  resendVerification: async (email) => {
+  
+resendVerification: async (email) => {
+  try {
     const currentUser = auth.currentUser;
 
     if (!currentUser) {
       throw new Error(
-        'Your Firebase session has expired. Please register again or sign in after verification.'
+        "No active Firebase session. Please sign in to your Firebase account first."
       );
     }
 
-    if (currentUser.email?.toLowerCase() !== email.trim().toLowerCase()) {
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (currentUser.email?.toLowerCase() !== cleanEmail) {
       throw new Error(
-        'The signed-in Firebase account does not match this email address.'
+        "The signed-in Firebase account does not match this email address."
       );
     }
 
     await reload(currentUser);
 
-    if (currentUser.emailVerified) {
-      throw new Error('This email address is already verified.');
+    if (auth.currentUser.emailVerified) {
+      throw new Error("This email address is already verified.");
     }
 
-    await sendEmailVerification(currentUser, {
-      url: `${window.location.origin}/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`,
+    await sendEmailVerification(auth.currentUser, {
+      url: `${window.location.origin}/verify-email?email=${encodeURIComponent(cleanEmail)}`,
       handleCodeInApp: false
     });
 
+    console.log("Verification email successfully requested.");
+
     return {
       success: true,
-      message: 'A new verification email has been sent.'
+      message: "Verification email sent successfully."
     };
-  },
+
+  } catch (error) {
+    console.error("VERIFICATION EMAIL ERROR:", {
+      code: error.code,
+      message: error.message
+    });
+
+    throw error;
+  }
+},
+
 
   // FIREBASE LOGOUT
   logoutFirebase: async () => {
