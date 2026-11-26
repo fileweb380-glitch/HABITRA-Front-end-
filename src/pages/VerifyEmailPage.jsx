@@ -1,4 +1,4 @@
-   
+  
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 
@@ -22,19 +22,22 @@ export default function VerifyEmailPage() {
   const navigate = useNavigate();
 
   const email = searchParams.get('email');
+  const token = searchParams.get('token');
   const pending = searchParams.get('pending') === '1';
 
-  const [loading, setLoading] = useState(!pending);
+  const [loading, setLoading] = useState(Boolean(token));
   const [verified, setVerified] = useState(false);
   const [error, setError] = useState('');
   const [resending, setResending] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
   const [checking, setChecking] = useState(false);
 
-  // Check Firebase verification through the backend.
+  // Verify using the backend-generated token.
   const checkVerification = async () => {
-    if (!email) {
-      setError('Your verification email address is missing.');
+    if (!token || !email) {
+      setError(
+        'Your verification link is missing its token or email address.'
+      );
       return;
     }
 
@@ -42,18 +45,17 @@ export default function VerifyEmailPage() {
     setError('');
 
     try {
-      await authService.verifyFirebaseEmail(email);
+      await authService.verifyEmail(token, email);
 
       setVerified(true);
       setError('');
     } catch (err) {
-      const message =
+      setError(
         err.response?.data?.error ||
         err.response?.data?.message ||
-        err.message ||
-        'Your email has not been verified yet. Please check your inbox and try again.';
+        'This verification link is invalid or expired.'
+      );
 
-      setError(message);
       setVerified(false);
     } finally {
       setChecking(false);
@@ -61,17 +63,15 @@ export default function VerifyEmailPage() {
     }
   };
 
-  // Automatically check when Firebase redirects back
-  // without the pending parameter.
+  // Automatically verify when the user opens the email link.
   useEffect(() => {
-    if (pending) {
+    if (!token) {
       setLoading(false);
-      return;
-    }
 
-    if (!email) {
-      setError('Your verification email address is missing.');
-      setLoading(false);
+      if (!pending && !email) {
+        setError('Your verification email address is missing.');
+      }
+
       return;
     }
 
@@ -79,7 +79,7 @@ export default function VerifyEmailPage() {
 
     const verify = async () => {
       try {
-        await authService.verifyFirebaseEmail(email);
+        await authService.verifyEmail(token, email);
 
         if (active) {
           setVerified(true);
@@ -90,8 +90,7 @@ export default function VerifyEmailPage() {
           setError(
             err.response?.data?.error ||
             err.response?.data?.message ||
-            err.message ||
-            'Verification could not be confirmed. Please try again.'
+            'Verification failed. Your link may have expired.'
           );
         }
       } finally {
@@ -106,9 +105,9 @@ export default function VerifyEmailPage() {
     return () => {
       active = false;
     };
-  }, [email, pending]);
+  }, [token, email]);
 
-  // Resend using Firebase Authentication directly.
+  // Resend through backend Nodemailer.
   const handleResend = async () => {
     if (!email || resending) return;
 
@@ -126,7 +125,6 @@ export default function VerifyEmailPage() {
       setError(
         err.response?.data?.error ||
         err.response?.data?.message ||
-        err.message ||
         'Unable to resend verification email.'
       );
     } finally {
@@ -150,35 +148,23 @@ export default function VerifyEmailPage() {
           textAlign: 'center'
         }}
       >
-
-        {/* LOADING */}
         {loading ? (
           <>
             <Loader2
               size={40}
               className="spin"
-              style={{
-                color: 'var(--accent)',
-                marginBottom: '1rem'
-              }}
+              style={{ color: 'var(--accent)', marginBottom: '1rem' }}
             />
 
-            <h2>Checking Your Email...</h2>
+            <h2>Verifying Your Email...</h2>
 
-            <p>
-              Please wait while we confirm your HABITRA account.
-            </p>
+            <p>Please wait while we confirm your HABITRA account.</p>
           </>
         ) : verified ? (
-
-          /* SUCCESS */
           <>
             <CheckCircle2
               size={52}
-              style={{
-                color: 'var(--success)',
-                marginBottom: '1rem'
-              }}
+              style={{ color: 'var(--success)', marginBottom: '1rem' }}
             />
 
             <h2>Email Verified!</h2>
@@ -210,54 +196,38 @@ export default function VerifyEmailPage() {
               <ArrowRight size={16} />
             </Button>
           </>
-
         ) : pending ? (
-
-          /* NEW REGISTRATION */
           <>
             <Mail
               size={48}
-              style={{
-                color: 'var(--accent)',
-                marginBottom: '1rem'
-              }}
+              style={{ color: 'var(--accent)', marginBottom: '1rem' }}
             />
 
             <h2>Check Your Inbox</h2>
 
             <p>We've sent a verification link to:</p>
 
-            <strong
-              style={{ overflowWrap: 'anywhere' }}
-            >
+            <strong style={{ overflowWrap: 'anywhere' }}>
               {email}
             </strong>
 
             <p style={{ marginTop: '1rem' }}>
-              Open the email from Firebase and click
-              the verification link to activate your HABITRA account.
+              Open your email from HABITRA and click the verification
+              link to activate your account.
             </p>
 
             <ErrorMessage message={error} />
 
             {resendMessage && (
-              <p
-                style={{
-                  color: 'var(--success)',
-                  marginTop: '1rem'
-                }}
-              >
+              <p style={{ color: 'var(--success)', marginTop: '1rem' }}>
                 {resendMessage}
               </p>
             )}
 
             <Button
               onClick={handleResend}
-              disabled={resending || checking}
-              style={{
-                width: '100%',
-                marginTop: '1rem'
-              }}
+              disabled={resending}
+              style={{ width: '100%', marginTop: '1rem' }}
             >
               {resending ? (
                 <>
@@ -272,111 +242,49 @@ export default function VerifyEmailPage() {
               )}
             </Button>
 
-            <Button
-              onClick={checkVerification}
-              disabled={checking || resending}
-              variant="secondary"
-              style={{
-                width: '100%',
-                marginTop: '0.75rem'
-              }}
-            >
-              {checking ? (
-                <>
-                  <Loader2 size={16} className="spin" />
-                  Checking...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 size={16} />
-                  I've verified my email
-                </>
-              )}
-            </Button>
-
             <Link
               to="/login"
-              style={{
-                display: 'block',
-                marginTop: '1.5rem'
-              }}
+              style={{ display: 'block', marginTop: '1.5rem' }}
             >
               Back to Sign In
             </Link>
           </>
-
         ) : (
-
-          /* VERIFICATION NOT CONFIRMED */
           <>
             <XCircle
               size={50}
-              style={{
-                color: 'var(--danger)',
-                marginBottom: '1rem'
-              }}
+              style={{ color: 'var(--danger)', marginBottom: '1rem' }}
             />
 
             <h2>Verification Not Confirmed</h2>
 
             <p>
-              We couldn't confirm your email yet.
-              Make sure you've clicked the verification link
-              in your Firebase email.
+              We couldn't verify your email. Your link may be invalid
+              or expired.
             </p>
 
             <ErrorMessage message={error} />
 
-            <Button
-              onClick={checkVerification}
-              disabled={checking}
-              style={{
-                width: '100%',
-                marginTop: '1rem'
-              }}
-            >
-              {checking ? (
-                <>
-                  <Loader2 size={16} className="spin" />
-                  Checking...
-                </>
-              ) : (
-                <>
-                  <RefreshCw size={16} />
-                  Check verification again
-                </>
-              )}
-            </Button>
-
-            <Button
-              onClick={() =>
-                navigate(
-                  `/verify-email?email=${encodeURIComponent(email || '')}&pending=1`
-                )
-              }
-              variant="secondary"
-              style={{
-                width: '100%',
-                marginTop: '0.75rem'
-              }}
-            >
-              Request another email
-            </Button>
+            {email && (
+              <Button
+                onClick={handleResend}
+                disabled={resending}
+                style={{ width: '100%', marginTop: '1rem' }}
+              >
+                {resending ? 'Sending...' : 'Request a new verification email'}
+              </Button>
+            )}
 
             <Link
               to="/login"
-              style={{
-                display: 'block',
-                marginTop: '1.5rem'
-              }}
+              style={{ display: 'block', marginTop: '1.5rem' }}
             >
               Back to Sign In
             </Link>
           </>
         )}
-
       </div>
     </div>
   );
 }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
