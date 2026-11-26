@@ -33,7 +33,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email.trim(), password);
+      await login(email.trim().toLowerCase(), password);
     } catch (err) {
       setError(
         err.response?.data?.error ||
