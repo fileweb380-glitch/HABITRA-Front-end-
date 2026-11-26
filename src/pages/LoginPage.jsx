@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import ErrorMessage from '../components/common/ErrorMessage';
-import { Link } from 'react-router-dom';
+
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,6 +24,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,7 +35,20 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email.trim().toLowerCase(), password);
+      const user = await login(
+        email.trim().toLowerCase(),
+        password
+      );
+
+      // Confirm successful authentication before redirecting.
+      if (user?.token) {
+        navigate('/dashboard', { replace: true });
+      } else {
+        setError(
+          'Login response was incomplete. Please try again.'
+        );
+      }
+
     } catch (err) {
       setError(
         err.response?.data?.error ||
@@ -221,3 +236,4 @@ export default function LoginPage() {
     </main>
   );
 }
+
