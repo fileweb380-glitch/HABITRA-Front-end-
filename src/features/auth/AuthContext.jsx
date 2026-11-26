@@ -1,4 +1,5 @@
 
+ 
 import React, {
   createContext,
   useContext,
@@ -14,6 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Restore the logged-in user
   useEffect(() => {
     const token = localStorage.getItem('habitra_token');
 
@@ -42,6 +44,7 @@ export const AuthProvider = ({ children }) => {
       });
   }, []);
 
+  // Login
   const login = async (email, password) => {
     const data = await authService.login(email, password);
 
@@ -51,6 +54,7 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  // Register
   const register = async (name, email, password, timezone) => {
     return await authService.register(
       name,
@@ -60,32 +64,32 @@ export const AuthProvider = ({ children }) => {
     );
   };
 
+  // Verify email using backend token
+  const verifyEmail = async (token, email) => {
+    return await authService.verifyEmail(token, email);
+  };
+
+  // Resend verification email
   const resendVerification = async (email) => {
     return await authService.resendVerification(email);
   };
 
-  const verifyFirebaseEmail = async (email) => {
-    const data = await authService.verifyFirebaseEmail(email);
-    return data;
-  };
-
-  const logout = async () => {
+  // Logout
+  const logout = () => {
     localStorage.removeItem('habitra_token');
     setUser(null);
-
-    await authService.logoutFirebase();
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        loading,
         login,
         register,
-        logout,
+        verifyEmail,
         resendVerification,
-        verifyFirebaseEmail,
-        loading
+        logout
       }}
     >
       {children}
@@ -94,4 +98,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
-                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                           
