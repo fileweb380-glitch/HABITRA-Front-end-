@@ -1,5 +1,4 @@
-
- 
+     
 import React, {
   createContext,
   useContext,
@@ -15,7 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Restore the logged-in user
+  // Restore logged-in user when the app loads
   useEffect(() => {
     const token = localStorage.getItem('habitra_token');
 
@@ -27,26 +26,28 @@ export const AuthProvider = ({ children }) => {
     authService
       .getMe()
       .then((data) => {
-        if (!data.isVerified) {
-          localStorage.removeItem('habitra_token');
-          setUser(null);
-          return;
-        }
-
+        // No email verification requirement.
         setUser(data);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Session restoration failed:', error);
+
         localStorage.removeItem('habitra_token');
         setUser(null);
       })
       .finally(() => {
         setLoading(false);
       });
+
   }, []);
 
-  // Login
+  // LOGIN
   const login = async (email, password) => {
     const data = await authService.login(email, password);
+
+    if (!data?.token) {
+      throw new Error('Authentication token was not returned.');
+    }
 
     localStorage.setItem('habitra_token', data.token);
     setUser(data);
@@ -54,27 +55,26 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  // Register
+  // REGISTER
   const register = async (name, email, password, timezone) => {
-    return await authService.register(
+    const data = await authService.register(
       name,
       email,
       password,
       timezone
     );
+
+    if (!data?.token) {
+      throw new Error('Account created, but authentication token was not returned.');
+    }
+
+    localStorage.setItem('habitra_token', data.token);
+    setUser(data);
+
+    return data;
   };
 
-  // Verify email using backend token
-  const verifyEmail = async (token, email) => {
-    return await authService.verifyEmail(token, email);
-  };
-
-  // Resend verification email
-  const resendVerification = async (email) => {
-    return await authService.resendVerification(email);
-  };
-
-  // Logout
+  // LOGOUT
   const logout = () => {
     localStorage.removeItem('habitra_token');
     setUser(null);
@@ -87,8 +87,6 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         register,
-        verifyEmail,
-        resendVerification,
         logout
       }}
     >
@@ -98,4 +96,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
-                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                             
