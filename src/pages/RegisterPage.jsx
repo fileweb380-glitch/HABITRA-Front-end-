@@ -5,6 +5,7 @@ import { useAuth } from '../features/auth/AuthContext';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import ErrorMessage from '../components/common/ErrorMessage';
+
 import {
   Eye,
   EyeOff,
@@ -13,7 +14,6 @@ import {
   ShieldCheck,
   Sparkles
 } from 'lucide-react';
-
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
@@ -39,15 +39,15 @@ export default function RegisterPage() {
     setError('');
 
     const cleanName = fullName.trim();
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
 
     if (cleanName.length < 2) {
       setError('Please enter your full name.');
       return;
     }
 
-    if (password.length < 6) {
-      setError('Your password must contain at least 6 characters.');
+    if (password.length < 8) {
+      setError('Your password must contain at least 8 characters.');
       return;
     }
 
@@ -59,11 +59,21 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(cleanName, cleanEmail, password, timezone);
+      const user = await register(
+        cleanName,
+        cleanEmail,
+        password,
+        timezone
+      );
 
-      navigate(
-        `/verify-email?email=${encodeURIComponent(cleanEmail)}&pending=1`
+      if (!user?.token) {
+        throw new Error(
+          'Account created, but authentication failed. Please sign in.'
         );
+      }
+
+      navigate('/dashboard', { replace: true });
+
     } catch (err) {
       const errorMessage =
         err.response?.data?.error ||
@@ -72,6 +82,7 @@ export default function RegisterPage() {
         'Registration failed. Please try again.';
 
       setError(errorMessage);
+
     } finally {
       setLoading(false);
     }
@@ -222,8 +233,8 @@ export default function RegisterPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 6 characters"
-                    minLength={6}
+                    placeholder="At least 8 characters"
+                    minLength={8}
                     autoComplete="new-password"
                     required
                   />
@@ -242,7 +253,7 @@ export default function RegisterPage() {
                 </div>
 
                 <span className="register-field-hint">
-                  Use at least 6 characters.
+                  Use at least 8 characters.
                 </span>
               </div>
 
