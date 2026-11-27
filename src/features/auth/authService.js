@@ -1,7 +1,9 @@
 
+
 import apiClient from '../../lib/apiClient';
 
 export const authService = {
+
   // REGISTER
   register: async (name, email, password, timezone) => {
     const res = await apiClient.post('/auth/register', {
@@ -30,30 +32,6 @@ export const authService = {
     return res.data;
   },
 
-  // VERIFY EMAIL
-  verifyEmail: async (token, email) => {
-    const res = await apiClient.get('/auth/verify-email', {
-      params: {
-        token,
-        email: email.trim().toLowerCase()
-      }
-    });
-
-    return res.data;
-  },
-
-  // RESEND VERIFICATION EMAIL
-  resendVerification: async (email) => {
-    const res = await apiClient.post(
-      '/auth/resend-verification',
-      {
-        email: email.trim().toLowerCase()
-      }
-    );
-
-    return res.data;
-  },
-
   // FORGOT PASSWORD
   forgotPassword: async (email) => {
     const res = await apiClient.post(
@@ -78,4 +56,5 @@ export const authService = {
 
     return res.data;
   }
+
 };
