@@ -72,7 +72,7 @@ export default function RegisterPage() {
         );
       }
 
-      navigate('/dashboard', { replace: true });
+      navigate('/onboarding', { replace: true });
 
     } catch (err) {
       const errorMessage =
